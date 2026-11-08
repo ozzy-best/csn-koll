@@ -50,11 +50,10 @@ small.n{color:var(--mu)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 // ====== KONFIGURATION (klistra in dina Supabase-värden, se instruktioner) ======
-const SUPABASE_URL = "";      // t.ex. https://abcdxyz.supabase.co
-const SUPABASE_ANON_KEY = ""; // "anon public"-nyckeln (är avsedd att vara publik; RLS skyddar datan)
+const SUPABASE_URL = "https://rhkttdmknuorlrjevtik.supabase.co";      // t.ex. https://abcdxyz.supabase.co
+const SUPABASE_ANON_KEY = "sb_publishable_NM2yWJ0qnrnQhv61JbmYVg_021XEkp0"; // "anon public"-nyckeln (är avsedd att vara publik; RLS skyddar datan)
 // =================================================================================
-const CLOUD = !!(NEXT_PUBLIC_SUPABASE_URL=https://rhkttdmknuorlrjevtik.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_NM2yWJ0qnrnQhv61JbmYVg_021XEkp0);
+const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
 const sb = CLOUD ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
