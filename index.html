@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CSN-koll">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0f766e">
+<title>CSN-koll</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230f766e'/%3E%3Ctext x='50' y='66' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'%3Ekr%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f4f6f8;--card:#fff;--tx:#14202b;--mu:#64748b;--bd:#e2e8f0;--pr:#0f766e;--ok:#16a34a;--wa:#ea8a0c;--er:#dc2626;--r:18px}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1319;--card:#17202a;--tx:#e8eef4;--mu:#93a3b4;--bd:#273442;--pr:#2dd4bf}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);padding-top:env(safe-area-inset-top)}
+main{max-width:860px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom))}
+h1{font-size:1.4rem;margin:.2rem 0 1rem}h2{font-size:1.05rem;margin:0 0 .6rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:14px;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.grid .card{margin:0}
+.lbl{color:var(--mu);font-size:.8rem}.big{font-size:1.35rem;font-weight:700}
+.bar{height:16px;border-radius:99px;background:var(--bd);overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .6s ease,background .3s}
+.s-ok{color:var(--ok)}.s-wa{color:var(--wa)}.s-er{color:var(--er)}
+.alert{padding:12px 14px;border-radius:14px;margin-bottom:14px;font-weight:600}
+.a-ok{background:#16a34a22;color:var(--ok)}.a-wa{background:#ea8a0c26;color:var(--wa)}.a-er{background:#dc262626;color:var(--er)}
+label{display:block;font-size:.85rem;color:var(--mu);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:12px;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)}
+button{font:inherit;border:0;border-radius:12px;padding:12px 16px;background:var(--pr);color:#fff;font-weight:600;cursor:pointer}
+button.sec{background:var(--bd);color:var(--tx)}button.dng{background:var(--er)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.row>*{flex:1}
+.item{display:flex;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid var(--bd)}
+.item:last-child{border:0}.item b{display:block}.item .btns{display:flex;gap:6px}.item button{padding:6px 10px;font-size:.85rem}
+.pick{display:flex;gap:8px;margin-bottom:14px}.pick>*{flex:1}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav a{flex:1;text-align:center;padding:10px 4px;color:var(--mu);font-size:.75rem;text-decoration:none;cursor:pointer}
+nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:1.3rem}
+.cols{display:flex;align-items:flex-end;gap:8px;height:140px}.cols div{flex:1;text-align:center;font-size:.7rem;color:var(--mu)}
+.cols i{display:block;background:var(--pr);border-radius:8px 8px 0 0;min-height:2px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:99px;z-index:9}
+small.n{color:var(--mu)}
+@media(min-width:760px){nav{top:0;bottom:auto;border:0;border-bottom:1px solid var(--bd);padding:0 calc(50% - 430px)}nav a span{display:none}nav a{font-size:.95rem}main{padding-top:70px}.grid{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav id="nav" hidden></nav>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ====== KONFIGURATION (klistra in dina Supabase-värden, se instruktioner) ======
+const SUPABASE_URL = "";      // t.ex. https://abcdxyz.supabase.co
+const SUPABASE_ANON_KEY = ""; // "anon public"-nyckeln (är avsedd att vara publik; RLS skyddar datan)
+// =================================================================================
+const CLOUD = !!(NEXT_PUBLIC_SUPABASE_URL=https://rhkttdmknuorlrjevtik.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_NM2yWJ0qnrnQhv61JbmYVg_021XEkp0);
+const sb = CLOUD ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const kr = n => new Intl.NumberFormat("sv-SE", {style:"currency", currency:"SEK"}).format(n);
+const pc = n => n.toLocaleString("sv-SE", {maximumFractionDigits:1}) + " %";
+const cents = v => Math.round(Number(v) * 100);
+const MON = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+const now = new Date();
+const S = {items:[], limits:{}, year:now.getFullYear(), half:now.getMonth() < 6 ? 1 : 2, view:"dash", edit:null, fm:"", user:null};
+let T = JSON.parse(localStorage.getItem("csn_t") || '{"w1":70,"w2":85}');
+const halfOf = d => Number(d.slice(5,7)) <= 6 ? 1 : 2;
+const toast = m => { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2500); };
+
+// ---------- Datalager: moln (Supabase) eller lokalt (localStorage) ----------
+const lget = k => JSON.parse(localStorage.getItem(k) || (k === "csn_items" ? "[]" : "{}"));
+const lset = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+const DB = {
+  async load() {
+    if (CLOUD) {
+      const a = await sb.from("incomes").select("*").order("paid_date", {ascending:false}); if (a.error) throw a.error;
+      const b = await sb.from("limits").select("*"); if (b.error) throw b.error;
+      S.items = a.data; S.limits = {}; b.data.forEach(l => S.limits[l.year + "-" + l.half] = Number(l.amount));
+    } else { S.items = lget("csn_items"); S.limits = lget("csn_limits"); }
+  },
+  async save(it) {
+    if (CLOUD) { const r = it.id ? await sb.from("incomes").update(it).eq("id", it.id) : await sb.from("incomes").insert(it); if (r.error) throw r.error; }
+    else { const l = lget("csn_items"); if (it.id) Object.assign(l.find(x => x.id === it.id), it); else l.push({...it, id: crypto.randomUUID()}); lset("csn_items", l); }
+  },
+  async del(id) {
+    if (CLOUD) { const r = await sb.from("incomes").delete().eq("id", id); if (r.error) throw r.error; }
+    else lset("csn_items", lget("csn_items").filter(x => x.id !== id));
+  },
+  async setLimit(y, h, a) {
+    if (CLOUD) { const r = await sb.from("limits").upsert({year:y, half:h, amount:a}, {onConflict:"user_id,year,half"}); if (r.error) throw r.error; }
+    else { const l = lget("csn_limits"); l[y + "-" + h] = a; lset("csn_limits", l); }
+  },
+  async wipe() {
+    if (CLOUD) { for (const t of ["incomes","limits"]) { const r = await sb.from(t).delete().not("user_id","is",null); if (r.error) throw r.error; } }
+    else { localStorage.removeItem("csn_items"); localStorage.removeItem("csn_limits"); }
+  }
+};
+async function refresh() { try { await DB.load(); render(); } catch (e) { toast("Fel: " + e.message); } }
+
+// ---------- Beräkning ----------
+function calc() {
+  const inP = S.items.filter(i => Number(i.paid_date.slice(0,4)) === S.year && halfOf(i.paid_date) === S.half);
+  const sum = inP.reduce((a, i) => a + cents(i.amount), 0) / 100;
+  const lim = S.limits[S.year + "-" + S.half] || 0;
+  const used = lim > 0 ? sum / lim * 100 : 0;
+  const state = lim <= 0 ? "none" : used > 100 ? "er" : used >= 100 ? "er" : used >= T.w2 ? "wa" : used >= T.w1 ? "wa" : "ok";
+  return {inP, sum, lim, used, rest: Math.max(0, lim - sum), over: Math.max(0, sum - lim), state};
+}
+function warning(c) {
+  if (c.state === "none") return ["a-wa", "Ange fribeloppet för perioden under Inställningar."];
+  if (c.used > 100) return ["a-er", `Du har överskridit fribeloppet med ${kr(c.over)}.`];
+  if (c.used >= 100) return ["a-er", "Du har nått fribeloppet. Mer inkomst överskrider gränsen."];
+  if (c.used >= T.w2) return ["a-er", `Varning: ${pc(c.used)} använt. Endast ${kr(c.rest)} kvar.`];
+  if (c.used >= T.w1) return ["a-wa", `Du närmar dig gränsen (${pc(c.used)} använt).`];
+  return ["a-ok", "Du ligger under gränsen."];
+}
+const COL = {ok:"var(--ok)", wa:"var(--wa)", er:"var(--er)", none:"var(--mu)"};
+
+// ---------- Vyer ----------
+function picker() {
+  const ys = []; for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 5; y--) ys.push(y);
+  return `<div class="pick"><select id="py">${ys.map(y => `<option ${y === S.year ? "selected" : ""}>${y}</option>`).join("")}</select>
+  <select id="ph"><option value="1" ${S.half === 1 ? "selected" : ""}>Jan–jun</option><option value="2" ${S.half === 2 ? "selected" : ""}>Jul–dec</option></select></div>`;
+}
+function vDash() {
+  const c = calc(), [ac, at] = warning(c), p = Math.min(100, c.used);
+  return `<h1>Dashboard</h1>${picker()}<div class="alert ${ac}">${esc(at)}</div>
+  <div class="card"><div class="lbl">Period ${S.half === 1 ? "januari–juni" : "juli–december"} ${S.year}</div>
+  <div class="big" style="color:${COL[c.state]}">${pc(c.used)} använt</div>
+  <div class="bar"><i style="width:${p}%;background:${COL[c.state]}"></i></div></div>
+  <div class="grid"><div class="card"><div class="lbl">Fribelopp</div><div class="big">${kr(c.lim)}</div></div>
+  <div class="card"><div class="lbl">Registrerad inkomst</div><div class="big">${kr(c.sum)}</div></div>
+  <div class="card"><div class="lbl">${c.over ? "Överskridet" : "Kvar att tjäna"}</div><div class="big" style="color:${c.over ? "var(--er)" : "inherit"}">${kr(c.over || c.rest)}</div></div>
+  <div class="card"><div class="lbl">Antal inkomster</div><div class="big">${c.inP.length}</div></div></div>
+  <div class="card" style="margin-top:14px"><h2>Så räknas det</h2><small class="n">Summan av all bruttolön med utbetalningsdatum i perioden (${kr(c.sum)}) delas med fribeloppet (${kr(c.lim)}) = ${pc(c.used)}. Kvar = fribelopp − summa. Det är utbetalningsdatum som räknas, inte när arbetet utfördes. Varning vid ${T.w1} %, stark varning vid ${T.w2} % och vid 100 %. Fribeloppet anger du själv under Inställningar; kontrollera alltid aktuellt belopp hos CSN. Appen är ett hjälpmedel, inte ett officiellt beslut.</small></div>`;
+}
+function vInc() {
+  const e = S.edit ? S.items.find(i => i.id === S.edit) : null;
+  let list = [...S.items].sort((a, b) => b.paid_date.localeCompare(a.paid_date));
+  if (S.fm) list = list.filter(i => i.paid_date.startsWith(S.fm));
+  return `<h1>Inkomster</h1><div class="card"><h2>${e ? "Redigera inkomst" : "Lägg till inkomst"}</h2>
+  <form id="f"><label>Arbetsgivare *</label><input id="fe" required maxlength="80" value="${esc(e?.employer)}">
+  <label>Bruttolön före skatt (kr) *</label><input id="fa" required type="number" min="0.01" step="0.01" inputmode="decimal" value="${e ? e.amount : ""}">
+  <label>Utbetalningsdatum *</label><input id="fd" required type="date" value="${e ? e.paid_date : new Date().toISOString().slice(0,10)}">
+  <label>Kategori (valfri)</label><input id="fc" maxlength="40" value="${esc(e?.category)}">
+  <label>Beskrivning (valfri)</label><input id="fx" maxlength="200" value="${esc(e?.description)}">
+  <div class="row"><button type="submit">${e ? "Spara ändring" : "Lägg till"}</button>${e ? '<button type="button" class="sec" id="fcancel">Avbryt</button>' : ""}</div></form></div>
+  <div class="card"><h2>Alla inkomster</h2><label>Filtrera på månad</label><div class="row" style="margin-top:0"><input type="month" id="fm" value="${S.fm}"><button class="sec" id="fclr" style="flex:0">Rensa</button></div>
+  ${list.length ? list.map(i => `<div class="item"><div><b>${esc(i.employer)} · ${kr(Number(i.amount))}</b><small class="n">${i.paid_date}${i.category ? " · " + esc(i.category) : ""}${i.description ? " · " + esc(i.description) : ""}</small></div>
+  <div class="btns"><button class="sec" data-e="${i.id}">Ändra</button><button class="dng" data-d="${i.id}">Ta bort</button></div></div>`).join("") : "<small class='n'>Inga inkomster att visa.</small>"}</div>`;
+}
+function vStat() {
+  const c = calc(), m = Array(6).fill(0), emp = {};
+  c.inP.forEach(i => { const k = Number(i.paid_date.slice(5,7)) - 1 - (S.half - 1) * 6; m[k] += cents(i.amount) / 100; emp[i.employer] = (emp[i.employer] || 0) + cents(i.amount) / 100; });
+  const mx = Math.max(...m, 1);
+  return `<h1>Statistik</h1>${picker()}<div class="card"><h2>Inkomst per månad</h2><div class="cols">${m.map((v, k) => `<div><i style="height:${v / mx * 110}px"></i>${MON[k + (S.half - 1) * 6]}<br>${Math.round(v)}</div>`).join("")}</div></div>
+  <div class="card"><h2>Per arbetsgivare</h2>${Object.entries(emp).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="item"><b>${esc(k)}</b><span>${kr(v)}</span></div>`).join("") || "<small class='n'>Ingen data i perioden.</small>"}</div>
+  <div class="card"><h2>Nyckeltal</h2><div class="item"><span>Snitt per inkomst</span><b>${c.inP.length ? kr(c.sum / c.inP.length) : "–"}</b></div><div class="item"><span>Använt</span><b>${pc(c.used)}</b></div><div class="item"><span>Kvar</span><b>${kr(c.rest)}</b></div></div>`;
+}
+function vSet() {
+  return `<h1>Inställningar</h1>${picker()}<div class="card"><h2>Fribelopp ${S.half === 1 ? "jan–jun" : "jul–dec"} ${S.year}</h2>
+  <input id="sl" type="number" min="0" step="0.01" inputmode="decimal" value="${S.limits[S.year + "-" + S.half] ?? ""}" placeholder="t.ex. 126149"><div class="row"><button id="sls">Spara fribelopp</button></div></div>
+  <div class="card"><h2>Varningsnivåer (%)</h2><small class="n">Sparas på den här enheten.</small><label>Närmar sig</label><input id="t1" type="number" min="1" max="99" value="${T.w1}"><label>Stark varning</label><input id="t2" type="number" min="1" max="99" value="${T.w2}"><div class="row"><button id="tsv">Spara nivåer</button></div></div>
+  <div class="card"><h2>Data</h2><div class="row"><button class="sec" id="ecsv">Exportera CSV</button><button class="sec" id="ebk">Exportera backup</button><button class="sec" id="rbk">Återställ backup</button></div><input id="rf" type="file" accept=".json" hidden>
+  <div class="row"><button class="dng" id="wipe">Radera all kontodata</button></div></div>
+  <div class="card"><h2>Konto</h2><small class="n">${CLOUD ? "Molnsynk aktiv" + (S.user ? " · " + esc(S.user.email) : "") : "Lokalt läge: data finns bara i den här webbläsaren och synkas inte. Fyll i Supabase-uppgifterna i index.html för molnsynk."}</small>${CLOUD ? '<div class="row"><button class="sec" id="lo">Logga ut</button></div>' : ""}</div>`;
+}
+function vAuth() {
+  return `<h1>CSN-koll</h1><div class="card"><h2>Logga in eller skapa konto</h2><form id="af"><label>E-post</label><input id="ae" type="email" required autocomplete="email"><label>Lösenord (minst 8 tecken)</label><input id="ap" type="password" minlength="8" required autocomplete="current-password">
+  <div class="row"><button type="submit" data-m="in">Logga in</button><button type="submit" class="sec" data-m="up">Skapa konto</button></div></form></div>`;
+}
+
+// ---------- Rendering & händelser ----------
+function render() {
+  const nav = $("#nav");
+  if (CLOUD && !S.user) { nav.hidden = true; $("#app").innerHTML = vAuth(); return bindAuth(); }
+  nav.hidden = false;
+  const tabs = [["dash","▦","Dashboard"],["inc","＋","Inkomster"],["stat","▮","Statistik"],["set","⚙","Inställningar"]];
+  nav.innerHTML = tabs.map(t => `<a data-v="${t[0]}" class="${S.view === t[0] ? "on" : ""}"><span>${t[1]}</span>${t[2]}</a>`).join("");
+  $("#app").innerHTML = {dash:vDash, inc:vInc, stat:vStat, set:vSet}[S.view]();
+  bind();
+}
+function bindAuth() {
+  let mode = "in";
+  document.querySelectorAll("#af button").forEach(b => b.onclick = () => mode = b.dataset.m);
+  $("#af").onsubmit = async ev => {
+    ev.preventDefault();
+    const cred = {email:$("#ae").value.trim(), password:$("#ap").value};
+    const r = mode === "up" ? await sb.auth.signUp(cred) : await sb.auth.signInWithPassword(cred);
+    if (r.error) return toast(r.error.message);
+    if (!r.data.session) return toast("Kontot skapat. Bekräfta e-posten om Supabase kräver det, logga sedan in.");
+    S.user = r.data.session.user; await refresh(); startSync();
+  };
+}
+function bind() {
+  document.querySelectorAll("nav a").forEach(a => a.onclick = () => { S.view = a.dataset.v; S.edit = null; render(); });
+  if ($("#py")) { $("#py").onchange = e => { S.year = +e.target.value; render(); }; $("#ph").onchange = e => { S.half = +e.target.value; render(); }; }
+  if ($("#f")) {
+    $("#f").onsubmit = async ev => {
+      ev.preventDefault();
+      const amount = Number($("#fa").value), d = $("#fd").value, emp = $("#fe").value.trim();
+      if (!emp || !(amount > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return toast("Kontrollera fälten.");
+      const it = {employer:emp, amount, paid_date:d, category:$("#fc").value.trim(), description:$("#fx").value.trim()};
+      if (S.edit) it.id = S.edit;
+      try { await DB.save(it); S.edit = null; await refresh(); toast("Sparat"); } catch (e) { toast("Fel: " + e.message); }
+    };
+    if ($("#fcancel")) $("#fcancel").onclick = () => { S.edit = null; render(); };
+    $("#fm").onchange = e => { S.fm = e.target.value; render(); }; $("#fclr").onclick = () => { S.fm = ""; render(); };
+    document.querySelectorAll("[data-e]").forEach(b => b.onclick = () => { S.edit = b.dataset.e; render(); scrollTo(0, 0); });
+    document.querySelectorAll("[data-d]").forEach(b => b.onclick = async () => {
+      if (!confirm("Ta bort inkomsten?")) return;
+      try { await DB.del(b.dataset.d); await refresh(); } catch (e) { toast("Fel: " + e.message); }
+    });
+  }
+  if ($("#sls")) {
+    $("#sls").onclick = async () => { const v = Number($("#sl").value); if (!(v >= 0) || $("#sl").value === "") return toast("Ange ett giltigt belopp."); try { await DB.setLimit(S.year, S.half, v); await refresh(); toast("Sparat"); } catch (e) { toast("Fel: " + e.message); } };
+    $("#tsv").onclick = () => { const a = +$("#t1").value, b = +$("#t2").value; if (!(a > 0 && b > a && b < 100)) return toast("Första nivån måste vara lägre än den andra (under 100)."); T = {w1:a, w2:b}; localStorage.setItem("csn_t", JSON.stringify(T)); toast("Sparat"); };
+    $("#ecsv").onclick = () => dl("csn-koll.csv", "text/csv", "\ufeffArbetsgivare;Brutto;Utbetalningsdatum;Kategori;Beskrivning\n" + S.items.map(i => [i.employer, i.amount, i.paid_date, i.category || "", i.description || ""].map(x => '"' + String(x).replace(/"/g, '""') + '"').join(";")).join("\n"));
+    $("#ebk").onclick = () => dl("csn-koll-backup.json", "application/json", JSON.stringify({version:1, items:S.items.map(({employer, amount, paid_date, category, description}) => ({employer, amount, paid_date, category, description})), limits:S.limits}));
+    $("#rbk").onclick = () => $("#rf").click();
+    $("#rf").onchange = async e => {
+      try {
+        const j = JSON.parse(await e.target.files[0].text());
+        if (!Array.isArray(j.items) || !confirm(`Lägga till ${j.items.length} inkomster från backupen?`)) return;
+        for (const i of j.items) { if (!(Number(i.amount) > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(i.paid_date)) continue; await DB.save({employer:String(i.employer || "").slice(0, 80), amount:Number(i.amount), paid_date:i.paid_date, category:i.category || "", description:i.description || ""}); }
+        for (const [k, v] of Object.entries(j.limits || {})) { const [y, h] = k.split("-"); await DB.setLimit(+y, +h, Number(v)); }
+        await refresh(); toast("Backup återställd");
+      } catch (err) { toast("Ogiltig backupfil"); }
+    };
+    $("#wipe").onclick = async () => { if (!confirm("Radera ALL data permanent?") || prompt('Skriv RADERA för att bekräfta') !== "RADERA") return; try { await DB.wipe(); await refresh(); toast("Allt raderat"); } catch (e) { toast("Fel: " + e.message); } };
+    if ($("#lo")) $("#lo").onclick = async () => { await sb.auth.signOut(); S.user = null; S.items = []; render(); };
+  }
+}
+function dl(name, type, txt) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], {type})); a.download = name; a.click(); }
+
+let synced = false;
+function startSync() { if (synced) return; synced = true; sb.channel("sync").on("postgres_changes", {event:"*", schema:"public", table:"incomes"}, refresh).on("postgres_changes", {event:"*", schema:"public", table:"limits"}, refresh).subscribe(); }
+(async function init() {
+  if (CLOUD) {
+    const {data} = await sb.auth.getSession(); S.user = data.session?.user || null;
+    sb.auth.onAuthStateChange((_e, s) => { S.user = s?.user || null; });
+    if (S.user) { await refresh(); startSync(); }
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && S.user) refresh(); });
+  } else await refresh();
+  render();
+})();
+</script>
+</body>
+</html>
