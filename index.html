@@ -1,8 +1,37 @@
+Claude
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Index · HTML
 <!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CSN-koll">
@@ -44,6 +73,23 @@ nav a.on{color:var(--pr);font-weight:700}nav a span{display:block;font-size:1.3r
 small.n{color:var(--mu)}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.chips button{padding:6px 12px;font-size:.85rem;border-radius:99px}
 @media(min-width:760px){nav{top:0;bottom:auto;border:0;border-bottom:1px solid var(--bd);padding:0 calc(50% - 430px)}nav a span{display:none}nav a{font-size:.95rem}main{padding-top:70px}.grid{grid-template-columns:repeat(4,1fr)}}
+html,body{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;overflow-x:hidden}
+h1{font-size:1.7rem;letter-spacing:-.02em}
+.card{min-width:0;box-shadow:0 1px 2px rgba(0,0,0,.05),0 10px 28px rgba(15,118,110,.07)}
+input,select,textarea{min-width:0;max-width:100%;min-height:48px;-webkit-appearance:none;appearance:none}
+input[type=date],input[type=month]{display:block;width:100%;text-align:left}
+input[type=date]::-webkit-date-and-time-value,input[type=month]::-webkit-date-and-time-value{text-align:left}
+input:focus,select:focus{outline:2px solid var(--pr);outline-offset:1px}
+button{box-shadow:0 2px 8px rgba(15,118,110,.25)}button.sec{box-shadow:none}
+.scan{width:100%;background:transparent;color:var(--pr);border:1.5px dashed var(--pr);box-shadow:none;padding:16px;margin-bottom:6px}
+.av{width:42px;height:42px;border-radius:14px;background:var(--pr);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.item{align-items:center}.item b{word-break:break-word}
+.bar{height:20px}.bar i{background-image:linear-gradient(90deg,rgba(255,255,255,.25),transparent)}
+nav{background:color-mix(in srgb,var(--card) 90%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+nav a span svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cols{height:150px}.cols div{cursor:pointer;height:100%;display:flex;flex-direction:column;justify-content:flex-end;-webkit-tap-highlight-color:transparent}
+.cols div.sel{color:var(--tx);font-weight:700}.cols div.sel i{background:var(--wa)}.cols i{transition:background .2s}
+.read{text-align:center;padding:12px;border-radius:14px;background:var(--bg);margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -52,6 +98,9 @@ small.n{color:var(--mu)}
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
+// Låst gränssnitt: ingen nyp-zoom
+["gesturestart","gesturechange","gestureend"].forEach(t => document.addEventListener(t, e => e.preventDefault()));
+document.addEventListener("touchmove", e => { if (e.touches.length > 1) e.preventDefault(); }, {passive:false});
 // ====== KONFIGURATION: fylls i i filen config.js (rör inte här) ======
 const _C = window.CSN_CONFIG || {};   // värdena ligger i config.js
 const SUPABASE_URL = _C.url || "";
@@ -66,13 +115,11 @@ const pc = n => n.toLocaleString("sv-SE", {maximumFractionDigits:1}) + " %";
 const cents = v => Math.round(Number(v) * 100);
 const MON = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
 const now = new Date();
-const S = {items:[], limits:{}, year:now.getFullYear(), half:now.getMonth() < 6 ? 1 : 2, view:"dash", edit:null, fm:"", user:null};
-let FS = +localStorage.getItem("csn_fs") || 16;
-const applyFS = () => document.documentElement.style.setProperty("--fs", FS + "px"); applyFS();
+const S = {items:[], limits:{}, year:now.getFullYear(), half:now.getMonth() < 6 ? 1 : 2, view:"dash", sel:-1, edit:null, fm:"", user:null};
 let T = JSON.parse(localStorage.getItem("csn_t") || '{"w1":70,"w2":85}');
 const halfOf = d => Number(d.slice(5,7)) <= 6 ? 1 : 2;
 const toast = m => { const t = document.createElement("div"); t.className = "toast"; t.textContent = m; document.body.append(t); setTimeout(() => t.remove(), 2500); };
-
+ 
 // ---------- Datalager: moln (Supabase) eller lokalt (localStorage) ----------
 const lget = k => JSON.parse(localStorage.getItem(k) || (k === "csn_items" ? "[]" : "{}"));
 const lset = (k, v) => localStorage.setItem(k, JSON.stringify(v));
@@ -102,7 +149,7 @@ const DB = {
   }
 };
 async function refresh() { try { await DB.load(); render(); } catch (e) { toast("Fel: " + e.message); } }
-
+ 
 // ---------- Beräkning ----------
 function calc() {
   const inP = S.items.filter(i => Number(i.paid_date.slice(0,4)) === S.year && halfOf(i.paid_date) === S.half);
@@ -121,7 +168,7 @@ function warning(c) {
   return ["a-ok", "Du ligger under gränsen."];
 }
 const COL = {ok:"var(--ok)", wa:"var(--wa)", er:"var(--er)", none:"var(--mu)"};
-
+ 
 // ---------- Vyer ----------
 function picker() {
   const ys = []; for (let y = now.getFullYear() + 1; y >= now.getFullYear() - 5; y--) ys.push(y);
@@ -131,7 +178,7 @@ function picker() {
 function vDash() {
   const c = calc(), [ac, at] = warning(c), p = Math.min(100, c.used);
   return `<h1>Dashboard</h1>${CLOUD ? "" : '<div class="alert a-wa">Lokalt läge: ingen koppling till molnet, så din sparade data visas inte här. Kontrollera att config.js finns och är ifylld.</div>'}${picker()}<div class="alert ${ac}">${esc(at)}</div>
-  <div class="card"><div class="lbl">Period ${S.half === 1 ? "januari–juni" : "juli–december"} ${S.year}</div>
+  <div class="card" style="border-top:5px solid ${COL[c.state]}"><div class="lbl">Period ${S.half === 1 ? "januari–juni" : "juli–december"} ${S.year}</div>
   <div class="big" style="color:${COL[c.state]}">${pc(c.used)} använt</div>
   <div class="bar"><i style="width:${p}%;background:${COL[c.state]}"></i></div></div>
   <div class="grid"><div class="card"><div class="lbl">Fribelopp</div><div class="big">${kr(c.lim)}</div></div>
@@ -145,7 +192,7 @@ function vInc() {
   let list = [...S.items].sort((a, b) => b.paid_date.localeCompare(a.paid_date));
   if (S.fm) list = list.filter(i => i.paid_date.startsWith(S.fm));
   return `<h1>Inkomster</h1><div class="card"><h2>${e ? "Redigera inkomst" : "Lägg till inkomst"}</h2>
-  <div class="row" style="margin-top:0"><button type="button" class="sec" id="cam">📷 Fota lönespec</button><button type="button" class="sec" id="up">📄 Ladda upp fil</button></div><input id="fcam" type="file" accept="image/*" capture="environment" hidden><input id="fup" type="file" accept="image/*,application/pdf" hidden><small class="n" id="scst">Lönespecen läses i din enhet och sparas inte. Kontrollera alltid uppgifterna innan du sparar.</small>
+  <button type="button" class="scan" id="up">📄 Skanna eller ladda upp lönespec</button><input id="fup" type="file" accept="image/*,application/pdf" hidden><small class="n" id="scst">Ta en bild, välj ett foto eller en PDF. Den läses i din enhet och sparas inte. Kontrollera uppgifterna innan du sparar.</small>
   <form id="f"><label>Arbetsgivare *</label><input id="fe" required maxlength="80" autocomplete="off" value="${esc(e?.employer)}"><div class="chips" id="sg"></div>
   <label>Bruttolön före skatt (kr) *</label><input id="fa" required type="number" min="0.01" step="0.01" inputmode="decimal" value="${e ? e.amount : ""}">
   <label>Utbetalningsdatum *</label><input id="fd" required type="date" value="${e ? e.paid_date : new Date().toISOString().slice(0,10)}">
@@ -153,14 +200,14 @@ function vInc() {
   <label>Beskrivning (valfri)</label><input id="fx" maxlength="200" value="${esc(e?.description)}">
   <div class="row"><button type="submit">${e ? "Spara ändring" : "Lägg till"}</button>${e ? '<button type="button" class="sec" id="fcancel">Avbryt</button>' : ""}</div></form></div>
   <div class="card"><h2>Alla inkomster</h2><label>Filtrera på månad</label><div class="row" style="margin-top:0"><input type="month" id="fm" value="${S.fm}"><button class="sec" id="fclr" style="flex:0">Rensa</button></div>
-  ${list.length ? list.map(i => `<div class="item"><div><b>${esc(i.employer)} · ${kr(Number(i.amount))}</b><small class="n">${i.paid_date}${i.category ? " · " + esc(i.category) : ""}${i.description ? " · " + esc(i.description) : ""}</small></div>
+  ${list.length ? list.map(i => `<div class="item"><div class="av">${esc(i.employer.trim().charAt(0).toUpperCase())}</div><div style="flex:1;min-width:0"><b>${esc(i.employer)}</b><b style="color:var(--pr)">${kr(Number(i.amount))}</b><small class="n">${i.paid_date}${i.category ? " · " + esc(i.category) : ""}${i.description ? " · " + esc(i.description) : ""}</small></div>
   <div class="btns"><button class="sec" data-e="${i.id}">Ändra</button><button class="dng" data-d="${i.id}">Ta bort</button></div></div>`).join("") : "<small class='n'>Inga inkomster att visa.</small>"}</div>`;
 }
 function vStat() {
   const c = calc(), m = Array(6).fill(0), emp = {};
   c.inP.forEach(i => { const k = Number(i.paid_date.slice(5,7)) - 1 - (S.half - 1) * 6; m[k] += cents(i.amount) / 100; emp[i.employer] = (emp[i.employer] || 0) + cents(i.amount) / 100; });
   const mx = Math.max(...m, 1);
-  return `<h1>Statistik</h1>${picker()}<div class="card"><h2>Inkomst per månad</h2><div class="cols">${m.map((v, k) => `<div><i style="height:${v / mx * 110}px"></i>${MON[k + (S.half - 1) * 6]}<br>${Math.round(v)}</div>`).join("")}</div></div>
+  return `<h1>Statistik</h1>${picker()}<div class="card"><h2>Inkomst per månad</h2><div class="read">${S.sel >= 0 ? `${MON[S.sel + (S.half - 1) * 6]}: <b>${kr(m[S.sel])}</b>` : "Tryck på en stapel för att se inkomsten"}</div><div class="cols">${m.map((v, k) => `<div data-m="${k}" class="${k === S.sel ? "sel" : ""}"><i style="height:${Math.max(4, v / mx * 110)}px"></i>${MON[k + (S.half - 1) * 6]}</div>`).join("")}</div></div>
   <div class="card"><h2>Per arbetsgivare</h2>${Object.entries(emp).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="item"><b>${esc(k)}</b><span>${kr(v)}</span></div>`).join("") || "<small class='n'>Ingen data i perioden.</small>"}</div>
   <div class="card"><h2>Nyckeltal</h2><div class="item"><span>Snitt per inkomst</span><b>${c.inP.length ? kr(c.sum / c.inP.length) : "–"}</b></div><div class="item"><span>Använt</span><b>${pc(c.used)}</b></div><div class="item"><span>Kvar</span><b>${kr(c.rest)}</b></div></div>`;
 }
@@ -168,7 +215,6 @@ function vSet() {
   return `<h1>Inställningar</h1>${picker()}<div class="card"><h2>Fribelopp ${S.half === 1 ? "jan–jun" : "jul–dec"} ${S.year}</h2>
   <input id="sl" type="number" min="0" step="0.01" inputmode="decimal" value="${S.limits[S.year + "-" + S.half] ?? ""}" placeholder="t.ex. 126149"><div class="row"><button id="sls">Spara fribelopp</button></div></div>
   <div class="card"><h2>Varningsnivåer (%)</h2><small class="n">Sparas på den här enheten.</small><label>Närmar sig</label><input id="t1" type="number" min="1" max="99" value="${T.w1}"><label>Stark varning</label><input id="t2" type="number" min="1" max="99" value="${T.w2}"><div class="row"><button id="tsv">Spara nivåer</button></div></div>
-  <div class="card"><h2>Textstorlek</h2><small class="n">Du kan också zooma med två fingrar.</small><div class="row"><button class="sec" id="fsm">A− Mindre</button><button class="sec" id="fsp">A+ Större</button></div></div>
   <div class="card"><h2>Data</h2><div class="row"><button class="sec" id="ecsv">Exportera CSV</button><button class="sec" id="ebk">Exportera backup</button><button class="sec" id="rbk">Återställ backup</button></div><input id="rf" type="file" accept=".json" hidden>
   <div class="row"><button class="dng" id="wipe">Radera all kontodata</button></div></div>
   <div class="card"><h2>Konto</h2><small class="n">${CLOUD ? "Molnsynk aktiv" + (S.user ? " · " + esc(S.user.email) : "") : "Lokalt läge: data finns bara i den här webbläsaren och synkas inte. Fyll i Supabase-uppgifterna i index.html för molnsynk."}</small>${CLOUD ? '<div class="row"><button class="sec" id="lo">Logga ut</button></div>' : ""}</div>`;
@@ -177,7 +223,7 @@ function vAuth() {
   return `<h1>CSN-koll</h1><div class="card"><h2>Logga in eller skapa konto</h2><form id="af"><label>E-post</label><input id="ae" type="email" required autocomplete="email"><label>Lösenord (minst 8 tecken)</label><input id="ap" type="password" minlength="8" required autocomplete="current-password">
   <div class="row"><button type="submit" data-m="in">Logga in</button><button type="submit" class="sec" data-m="up">Skapa konto</button></div></form></div>`;
 }
-
+ 
 // ---------- Arbetsgivarförslag & lönespecsavläsning ----------
 const emps = () => { const m = new Map(); [...S.items].sort((a, b) => b.paid_date.localeCompare(a.paid_date)).forEach(i => { const k = i.employer.trim().toLowerCase(); if (!m.has(k)) m.set(k, i); }); return [...m.values()]; };
 function sugg() {
@@ -240,13 +286,13 @@ async function scan(file) {
     st.textContent = got.length ? "Ifyllt: " + got.join(", ") + ". Kontrollera uppgifterna och tryck Lägg till." : "Hittade inget tydligt. Fyll i manuellt eller prova en skarpare, rakare bild.";
   } catch (e) { st.textContent = "Fel: " + e.message; }
 }
-
+ 
 // ---------- Rendering & händelser ----------
 function render() {
   const nav = $("#nav");
   if (CLOUD && !S.user) { nav.hidden = true; $("#app").innerHTML = vAuth(); return bindAuth(); }
   nav.hidden = false;
-  const tabs = [["dash","▦","Dashboard"],["inc","＋","Inkomster"],["stat","▮","Statistik"],["set","⚙","Inställningar"]];
+  const tabs = [["dash",'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',"Dashboard"],["inc",'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',"Inkomster"],["stat",'<svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>',"Statistik"],["set",'<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',"Inställningar"]];
   nav.innerHTML = tabs.map(t => `<a data-v="${t[0]}" class="${S.view === t[0] ? "on" : ""}"><span>${t[1]}</span>${t[2]}</a>`).join("");
   $("#app").innerHTML = {dash:vDash, inc:vInc, stat:vStat, set:vSet}[S.view]();
   bind();
@@ -265,7 +311,8 @@ function bindAuth() {
 }
 function bind() {
   document.querySelectorAll("nav a").forEach(a => a.onclick = () => { S.view = a.dataset.v; S.edit = null; render(); });
-  if ($("#py")) { $("#py").onchange = e => { S.year = +e.target.value; render(); }; $("#ph").onchange = e => { S.half = +e.target.value; render(); }; }
+  if ($("#py")) { $("#py").onchange = e => { S.year = +e.target.value; S.sel = -1; render(); }; $("#ph").onchange = e => { S.half = +e.target.value; S.sel = -1; render(); }; }
+  document.querySelectorAll(".cols [data-m]").forEach(b => b.onclick = () => { S.sel = +b.dataset.m; render(); });
   if ($("#f")) {
     $("#f").onsubmit = async ev => {
       ev.preventDefault();
@@ -277,8 +324,8 @@ function bind() {
     };
     if ($("#fcancel")) $("#fcancel").onclick = () => { S.edit = null; render(); };
     $("#fe").oninput = sugg; $("#fe").onfocus = sugg;
-    $("#cam").onclick = () => $("#fcam").click(); $("#up").onclick = () => $("#fup").click();
-    $("#fcam").onchange = $("#fup").onchange = ev => { const f = ev.target.files[0]; ev.target.value = ""; if (f) scan(f); };
+    $("#up").onclick = () => $("#fup").click();
+    $("#fup").onchange = ev => { const f = ev.target.files[0]; ev.target.value = ""; if (f) scan(f); };
     $("#fm").onchange = e => { S.fm = e.target.value; render(); }; $("#fclr").onclick = () => { S.fm = ""; render(); };
     document.querySelectorAll("[data-e]").forEach(b => b.onclick = () => { S.edit = b.dataset.e; render(); scrollTo(0, 0); });
     document.querySelectorAll("[data-d]").forEach(b => b.onclick = async () => {
@@ -289,8 +336,6 @@ function bind() {
   if ($("#sls")) {
     $("#sls").onclick = async () => { const v = Number($("#sl").value); if (!(v >= 0) || $("#sl").value === "") return toast("Ange ett giltigt belopp."); try { await DB.setLimit(S.year, S.half, v); await refresh(); toast("Sparat"); } catch (e) { toast("Fel: " + e.message); } };
     $("#tsv").onclick = () => { const a = +$("#t1").value, b = +$("#t2").value; if (!(a > 0 && b > a && b < 100)) return toast("Första nivån måste vara lägre än den andra (under 100)."); T = {w1:a, w2:b}; localStorage.setItem("csn_t", JSON.stringify(T)); toast("Sparat"); };
-    $("#fsm").onclick = () => { FS = Math.max(12, FS - 1); localStorage.setItem("csn_fs", FS); applyFS(); };
-    $("#fsp").onclick = () => { FS = Math.min(26, FS + 1); localStorage.setItem("csn_fs", FS); applyFS(); };
     $("#ecsv").onclick = () => dl("csn-koll.csv", "text/csv", "\ufeffArbetsgivare;Brutto;Utbetalningsdatum;Kategori;Beskrivning\n" + S.items.map(i => [i.employer, i.amount, i.paid_date, i.category || "", i.description || ""].map(x => '"' + String(x).replace(/"/g, '""') + '"').join(";")).join("\n"));
     $("#ebk").onclick = () => dl("csn-koll-backup.json", "application/json", JSON.stringify({version:1, items:S.items.map(({employer, amount, paid_date, category, description}) => ({employer, amount, paid_date, category, description})), limits:S.limits}));
     $("#rbk").onclick = () => $("#rf").click();
@@ -308,7 +353,7 @@ function bind() {
   }
 }
 function dl(name, type, txt) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], {type})); a.download = name; a.click(); }
-
+ 
 let synced = false;
 function startSync() { if (synced) return; synced = true; sb.channel("sync").on("postgres_changes", {event:"*", schema:"public", table:"incomes"}, refresh).on("postgres_changes", {event:"*", schema:"public", table:"limits"}, refresh).subscribe(); }
 (async function init() {
@@ -323,3 +368,5 @@ function startSync() { if (synced) return; synced = true; sb.channel("sync").on(
 </script>
 </body>
 </html>
+ 
+Claude finished the response
