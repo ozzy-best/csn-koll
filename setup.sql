@@ -21,3 +21,5 @@ alter table public.limits enable row level security;
 create policy "own incomes" on public.incomes for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "own limits" on public.limits for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 alter publication supabase_realtime add table public.incomes, public.limits;
+
+
