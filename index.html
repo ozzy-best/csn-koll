@@ -1,32 +1,4 @@
-Claude
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Index · HTML
 <!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -207,7 +179,7 @@ function vStat() {
   const c = calc(), m = Array(6).fill(0), emp = {};
   c.inP.forEach(i => { const k = Number(i.paid_date.slice(5,7)) - 1 - (S.half - 1) * 6; m[k] += cents(i.amount) / 100; emp[i.employer] = (emp[i.employer] || 0) + cents(i.amount) / 100; });
   const mx = Math.max(...m, 1);
-  return `<h1>Statistik</h1>${picker()}<div class="card"><h2>Inkomst per månad</h2><div class="read">${S.sel >= 0 ? `${MON[S.sel + (S.half - 1) * 6]}: <b>${kr(m[S.sel])}</b>` : "Tryck på en stapel för att se inkomsten"}</div><div class="cols">${m.map((v, k) => `<div data-m="${k}" class="${k === S.sel ? "sel" : ""}"><i style="height:${Math.max(4, v / mx * 110)}px"></i>${MON[k + (S.half - 1) * 6]}</div>`).join("")}</div></div>
+  return `<h1>Statistik</h1>${picker()}<div class="card"><h2>Inkomst per månad</h2><div class="read">${S.sel >= 0 ? `${MON[S.sel + (S.half - 1) * 6]}: <b>${kr(m[S.sel])}</b>` : "Tryck för att se inkomsten"}</div><div class="cols">${m.map((v, k) => `<div data-m="${k}" class="${k === S.sel ? "sel" : ""}"><i style="height:${Math.max(4, v / mx * 110)}px"></i>${MON[k + (S.half - 1) * 6]}</div>`).join("")}</div></div>
   <div class="card"><h2>Per arbetsgivare</h2>${Object.entries(emp).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="item"><b>${esc(k)}</b><span>${kr(v)}</span></div>`).join("") || "<small class='n'>Ingen data i perioden.</small>"}</div>
   <div class="card"><h2>Nyckeltal</h2><div class="item"><span>Snitt per inkomst</span><b>${c.inP.length ? kr(c.sum / c.inP.length) : "–"}</b></div><div class="item"><span>Använt</span><b>${pc(c.used)}</b></div><div class="item"><span>Kvar</span><b>${kr(c.rest)}</b></div></div>`;
 }
@@ -368,5 +340,3 @@ function startSync() { if (synced) return; synced = true; sb.channel("sync").on(
 </script>
 </body>
 </html>
- 
-Claude finished the response
